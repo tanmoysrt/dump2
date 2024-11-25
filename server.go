@@ -28,12 +28,12 @@ func NewServer(am *AMQPManager, queueName string) *echo.Echo {
 		}
 
 		// Validate required fields
-		if req.ID == "" || req.Key == "" || req.Lon == "" || req.Lat == "" {
+		if req.ID == "" || req.Key == "" || req.Lon == 0 || req.Lat == 0 {
 			return c.String(http.StatusBadRequest, "All fields are required")
 		}
 
 		// set timestamp to now
-		req.Timestamp = time.Now().Format(time.RFC3339)
+		req.Timestamp = time.Now().UTC().Unix()
 
 		err := am.QueueMessage(queueName, req)
 		if err != nil {
