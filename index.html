@@ -2,19 +2,26 @@
 <html>
 <head>
     <title>Location Tracker</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
         body {
             font-family: Arial, sans-serif;
             background: #f0f2f5;
         }
         .container {
-            max-width: 500px;
+            max-width: 800px;
             margin: 50px auto;
             padding: 30px;
             text-align: center;
             background: white;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        #map {
+            height: 300px;
+            width: 100%;
+            margin: 20px 0;
+            border-radius: 5px;
         }
         input {
             width: 100%;
@@ -61,6 +68,7 @@
 <body>
     <div class="container">
         <h2>Location Tracker</h2>
+        <div id="map"></div>
         <input type="text" id="deviceId" placeholder="Device ID" />
         <input type="text" id="secretKey" placeholder="Secret Key" />
         <button id="toggleBtn">Start Recording</button>
@@ -72,6 +80,7 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
         // Load saved values from localStorage
         document.getElementById('deviceId').value = localStorage.getItem('deviceId') || '';
@@ -81,6 +90,8 @@
         let watchId = null;
         let successCount = 0;
         let failCount = 0;
+        let map;
+        let marker;
         
         const toggleBtn = document.getElementById('toggleBtn');
         const deviceIdInput = document.getElementById('deviceId');
@@ -90,9 +101,24 @@
         const failCountSpan = document.getElementById('failCount');
         const lastAttemptSpan = document.getElementById('lastAttempt');
 
+        // Initialize map
+        map = L.map('map').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
         function updateLastAttempt() {
             const now = new Date();
             lastAttemptSpan.textContent = now.toLocaleTimeString();
+        }
+
+        function updateMap(lat, lon) {
+            if (!marker) {
+                marker = L.marker([lat, lon]).addTo(map);
+            } else {
+                marker.setLatLng([lat, lon]);
+            }
+            map.setView([lat, lon], 15);
         }
 
         toggleBtn.addEventListener('click', () => {
@@ -123,6 +149,9 @@
                         const lat = position.coords.latitude;
                         const lon = position.coords.longitude;
                         
+                        // Update map
+                        updateMap(lat, lon);
+
                         // Send to server
                         fetch(`/log?id=${deviceIdInput.value}&key=${secretKeyInput.value}&lon=${lon}&lat=${lat}`)
                             .then(response => {
