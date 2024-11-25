@@ -63,13 +63,28 @@
         .error {
             color: #f44336;
         }
+        label {
+            display: block;
+            text-align: left;
+            margin-top: 10px;
+            color: #666;
+        }
+        .api-details {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Location Tracker</h2>
         <div id="map"></div>
+        <label for="deviceId">Device ID:</label>
         <input type="text" id="deviceId" placeholder="Device ID" />
+        <label for="secretKey">Secret Key:</label>
         <input type="text" id="secretKey" placeholder="Secret Key" />
         <button id="toggleBtn">Start Recording</button>
         <div class="stats">
@@ -77,6 +92,12 @@
             <div class="stat-item">Successful Requests: <span id="successCount" class="success">0</span></div>
             <div class="stat-item">Failed Requests: <span id="failCount" class="error">0</span></div>
             <div class="stat-item">Last Attempt: <span id="lastAttempt">Never</span></div>
+            <div class="api-details">
+                <div class="stat-item">Last Response Time: <span id="responseTime">-</span></div>
+                <div class="stat-item">Last Status: <span id="lastStatus">-</span></div>
+                <div class="stat-item">Last URL: <span id="lastUrl" style="word-break: break-all;">-</span></div>
+                <div class="stat-item">Last Response: <span id="lastResponse" style="word-break: break-all;">-</span></div>
+            </div>
         </div>
     </div>
 
@@ -100,6 +121,10 @@
         const successCountSpan = document.getElementById('successCount');
         const failCountSpan = document.getElementById('failCount');
         const lastAttemptSpan = document.getElementById('lastAttempt');
+        const responseTimeSpan = document.getElementById('responseTime');
+        const lastStatusSpan = document.getElementById('lastStatus');
+        const lastUrlSpan = document.getElementById('lastUrl');
+        const lastResponseSpan = document.getElementById('lastResponse');
 
         // Initialize map
         map = L.map('map').setView([0, 0], 2);
@@ -152,9 +177,21 @@
                         // Update map
                         updateMap(lat, lon);
 
+                        const url = `/log?id=${deviceIdInput.value}&key=${secretKeyInput.value}&lon=${lon}&lat=${lat}`;
+                        lastUrlSpan.textContent = url;
+                        
+                        const startTime = Date.now();
+                        
                         // Send to server
-                        fetch(`/log?id=${deviceIdInput.value}&key=${secretKeyInput.value}&lon=${lon}&lat=${lat}`)
-                            .then(response => {
+                        fetch(url)
+                            .then(async response => {
+                                const endTime = Date.now();
+                                responseTimeSpan.textContent = `${endTime - startTime}ms`;
+                                lastStatusSpan.textContent = response.status;
+                                
+                                const responseText = await response.text();
+                                lastResponseSpan.textContent = responseText;
+                                
                                 if (response.status === 200) {
                                     successCount++;
                                     successCountSpan.textContent = successCount;
@@ -167,6 +204,7 @@
                                 console.error('Error sending location:', err);
                                 failCount++;
                                 failCountSpan.textContent = failCount;
+                                lastResponseSpan.textContent = err.message;
                                 updateLastAttempt();
                             });
                     },
@@ -174,6 +212,7 @@
                         console.error('Error getting location:', error);
                         failCount++;
                         failCountSpan.textContent = failCount;
+                        lastResponseSpan.textContent = error.message;
                         updateLastAttempt();
                     },
                     { enableHighAccuracy: true }
