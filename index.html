@@ -97,6 +97,12 @@
 
         toggleBtn.addEventListener('click', () => {
             if (!isRecording) {
+                // Check if fields are empty
+                if (!deviceIdInput.value || !secretKeyInput.value) {
+                    alert('Device ID and Secret Key are required!');
+                    return;
+                }
+
                 // Save values to localStorage
                 localStorage.setItem('deviceId', deviceIdInput.value);
                 localStorage.setItem('secretKey', secretKeyInput.value);
@@ -119,9 +125,13 @@
                         
                         // Send to server
                         fetch(`/log?id=${deviceIdInput.value}&key=${secretKeyInput.value}&lon=${lon}&lat=${lat}`)
-                            .then(() => {
-                                successCount++;
-                                successCountSpan.textContent = successCount;
+                            .then(response => {
+                                if (response.status === 200) {
+                                    successCount++;
+                                    successCountSpan.textContent = successCount;
+                                } else {
+                                    throw new Error('Non-200 response');
+                                }
                                 updateLastAttempt();
                             })
                             .catch(err => {
