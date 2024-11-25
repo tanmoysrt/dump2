@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Location Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+        }
+        .container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 30px;
+            text-align: center;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 12px 25px;
+            margin: 20px 0;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 15px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .stats {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            text-align: left;
+        }
+        .stat-item {
+            margin: 8px 0;
+            color: #666;
+        }
+        .success {
+            color: #4CAF50;
+        }
+        .error {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Location Tracker</h2>
+        <input type="text" id="deviceId" placeholder="Device ID" />
+        <input type="text" id="secretKey" placeholder="Secret Key" />
+        <button id="toggleBtn">Start Recording</button>
+        <div class="stats">
+            <div class="stat-item">Status: <span id="status">Stopped</span></div>
+            <div class="stat-item">Successful Requests: <span id="successCount" class="success">0</span></div>
+            <div class="stat-item">Failed Requests: <span id="failCount" class="error">0</span></div>
+            <div class="stat-item">Last Attempt: <span id="lastAttempt">Never</span></div>
+        </div>
+    </div>
+
+    <script>
+        // Load saved values from localStorage
+        document.getElementById('deviceId').value = localStorage.getItem('deviceId') || '';
+        document.getElementById('secretKey').value = localStorage.getItem('secretKey') || '';
+
+        let isRecording = false;
+        let watchId = null;
+        let successCount = 0;
+        let failCount = 0;
+        
+        const toggleBtn = document.getElementById('toggleBtn');
+        const deviceIdInput = document.getElementById('deviceId');
+        const secretKeyInput = document.getElementById('secretKey');
+        const statusSpan = document.getElementById('status');
+        const successCountSpan = document.getElementById('successCount');
+        const failCountSpan = document.getElementById('failCount');
+        const lastAttemptSpan = document.getElementById('lastAttempt');
+
+        function updateLastAttempt() {
+            const now = new Date();
+            lastAttemptSpan.textContent = now.toLocaleTimeString();
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            if (!isRecording) {
+                // Save values to localStorage
+                localStorage.setItem('deviceId', deviceIdInput.value);
+                localStorage.setItem('secretKey', secretKeyInput.value);
+
+                // Reset counters
+                successCount = 0;
+                failCount = 0;
+                successCountSpan.textContent = '0';
+                failCountSpan.textContent = '0';
+
+                // Disable inputs
+                deviceIdInput.disabled = true;
+                secretKeyInput.disabled = true;
+
+                // Start recording
+                watchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        
+                        // Send to server
+                        fetch(`/log?id=${deviceIdInput.value}&key=${secretKeyInput.value}&lon=${lon}&lat=${lat}`)
+                            .then(() => {
+                                successCount++;
+                                successCountSpan.textContent = successCount;
+                                updateLastAttempt();
+                            })
+                            .catch(err => {
+                                console.error('Error sending location:', err);
+                                failCount++;
+                                failCountSpan.textContent = failCount;
+                                updateLastAttempt();
+                            });
+                    },
+                    (error) => {
+                        console.error('Error getting location:', error);
+                        failCount++;
+                        failCountSpan.textContent = failCount;
+                        updateLastAttempt();
+                    },
+                    { enableHighAccuracy: true }
+                );
+
+                toggleBtn.textContent = 'Stop Recording';
+                toggleBtn.style.background = '#f44336';
+                statusSpan.textContent = 'Recording';
+                isRecording = true;
+            } else {
+                // Stop recording
+                if (watchId) navigator.geolocation.clearWatch(watchId);
+                
+                // Enable inputs
+                deviceIdInput.disabled = false;
+                secretKeyInput.disabled = false;
+
+                toggleBtn.textContent = 'Start Recording';
+                toggleBtn.style.background = '#4CAF50';
+                statusSpan.textContent = 'Stopped';
+                isRecording = false;
+            }
+        });
+    </script>
+</body>
+</html>

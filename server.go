@@ -1,15 +1,24 @@
 package main
 
 import (
+	_ "embed"
 	"net/http"
 	"time"
 
 	"github.com/labstack/echo/v4"
 )
 
+//go:embed index.html
+var indexHTML string
+
 func NewServer(am *AMQPManager, queueName string) *echo.Echo {
 	e := echo.New()
 	e.HideBanner = true
+
+	// Serve index.html
+	e.GET("/", func(c echo.Context) error {
+		return c.HTML(http.StatusOK, indexHTML)
+	})
 
 	// Log endpoint
 	e.GET("/log", func(c echo.Context) error {
