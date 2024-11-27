@@ -57,6 +57,9 @@ func NewServer(am *AMQPManager, queueName string) *echo.Echo {
 			return c.String(http.StatusBadRequest, "All fields are required")
 		}
 
+		isEnabled :=  c.QueryParams().Get(("enabled")) == "1"
+		req.Enabled = isEnabled
+
 		// set timestamp to now
 		req.Timestamp = time.Now().UTC().Unix()
 		// set event to "ignition"
