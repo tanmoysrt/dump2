@@ -21,7 +21,7 @@ func NewServer(am *AMQPManager, queueName string) *echo.Echo {
 	})
 
 	// Log endpoint
-	e.GET("/log", func(c echo.Context) error {
+	e.GET("/log/gps", func(c echo.Context) error {
 		req := new(LogRequest)
 		if err := c.Bind(req); err != nil {
 			return c.String(http.StatusBadRequest, "Invalid request")
@@ -34,6 +34,33 @@ func NewServer(am *AMQPManager, queueName string) *echo.Echo {
 
 		// set timestamp to now
 		req.Timestamp = time.Now().UTC().Unix()
+		// set event to "gps"
+		req.Event = "gps"
+
+		err := am.QueueMessage(queueName, req)
+		if err != nil {
+			return c.String(http.StatusInternalServerError, "Failed to queue message")
+		}
+
+		return c.String(http.StatusOK, "ok")
+	})
+
+	// Ignition endpoint
+	e.GET("/log/ignition", func(c echo.Context) error {
+		req := new(IgnitionLog)
+		if err := c.Bind(req); err != nil {
+			return c.String(http.StatusBadRequest, "Invalid request")
+		}
+
+		// Validate required fields
+		if req.ID == "" || req.Key == "" {
+			return c.String(http.StatusBadRequest, "All fields are required")
+		}
+
+		// set timestamp to now
+		req.Timestamp = time.Now().UTC().Unix()
+		// set event to "ignition"
+		req.Event = "ignition"
 
 		err := am.QueueMessage(queueName, req)
 		if err != nil {

@@ -117,6 +117,8 @@
         <label for="secretKey">Secret Key:</label>
         <input type="text" id="secretKey" placeholder="Secret Key" />
         <button id="toggleBtn">Start Recording</button>
+        <button id="ignitionOnBtn">Simulate Ignition On</button>
+        <button id="ignitionOffBtn">Simulate Ignition Off</button>
         <div class="stats">
             <div class="stat-item">Status: <span id="status">Stopped</span></div>
             <div class="stat-item">Successful Requests: <span id="successCount" class="success">0</span></div>
@@ -155,6 +157,8 @@
         const lastStatusSpan = document.getElementById('lastStatus');
         const lastUrlSpan = document.getElementById('lastUrl');
         const lastResponseSpan = document.getElementById('lastResponse');
+        const ignitionOnBtn = document.getElementById('ignitionOnBtn');
+        const ignitionOffBtn = document.getElementById('ignitionOffBtn');
 
         // Initialize map
         map = L.map('map').setView([0, 0], 2);
@@ -175,6 +179,18 @@
             }
             map.setView([lat, lon], 15);
         }
+
+        ignitionOnBtn.onclick = () => {
+            fetch(`/log/ignition?id=${deviceIdInput.value}&key=${secretKeyInput.value}&enabled=true`)
+                .then(res => alert('Ignition On successful'))
+                .catch(err => alert('Ignition On failed'));
+        };
+
+        ignitionOffBtn.onclick = () => {
+            fetch(`/log/ignition?id=${deviceIdInput.value}&key=${secretKeyInput.value}&enabled=false`)
+                .then(res => alert('Ignition Off successful'))
+                .catch(err => alert('Ignition Off failed'));
+        };
 
         toggleBtn.addEventListener('click', () => {
             if (!isRecording) {
@@ -207,12 +223,11 @@
                         // Update map
                         updateMap(lat, lon);
 
-                        const url = `/log?id=${deviceIdInput.value}&key=${secretKeyInput.value}&lon=${lon}&lat=${lat}`;
+                        const url = `/log/gps?id=${deviceIdInput.value}&key=${secretKeyInput.value}&lon=${lon}&lat=${lat}`;
                         lastUrlSpan.textContent = url;
                         
                         const startTime = Date.now();
-                        
-                        // Send to server
+
                         fetch(url)
                             .then(async response => {
                                 const endTime = Date.now();
