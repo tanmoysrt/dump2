@@ -39,7 +39,7 @@
         button {
             width: 100%;
             padding: 12px 25px;
-            margin: 20px 0;
+            margin: 5px 0;
             cursor: pointer;
             background: #4CAF50;
             color: white;
@@ -181,13 +181,13 @@
         }
 
         ignitionOnBtn.onclick = () => {
-            fetch(`/log/ignition?id=${deviceIdInput.value}&key=${secretKeyInput.value}&enabled=true`)
+            fetch(`/log/ignition?id=${deviceIdInput.value}&key=${secretKeyInput.value}&enabled=1`)
                 .then(res => alert('Ignition On successful'))
                 .catch(err => alert('Ignition On failed'));
         };
 
         ignitionOffBtn.onclick = () => {
-            fetch(`/log/ignition?id=${deviceIdInput.value}&key=${secretKeyInput.value}&enabled=false`)
+            fetch(`/log/ignition?id=${deviceIdInput.value}&key=${secretKeyInput.value}&enabled=0`)
                 .then(res => alert('Ignition Off successful'))
                 .catch(err => alert('Ignition Off failed'));
         };
